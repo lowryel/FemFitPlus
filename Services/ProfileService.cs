@@ -34,15 +34,8 @@ public class ProfileService(IMapper mapper, FemFitPlusContext context) : IProfil
             }
 
             var profile = _mapper.Map<ProfileCreateDto, Profile>(createDto);
-            profile.Id = createDto.UserId!;
+            profile.Id = Guid.NewGuid().ToString();
             profile.UserId = createDto.UserId!;
-            profile.HeightCm = createDto.HeightCm!;
-            profile.WeightKg = createDto.WeightKg!;
-            profile.FitnessGoal = createDto.FitnessGoal!;
-            profile.CycleLength = createDto.CycleLength!;
-            profile.PeriodLength = createDto.PeriodLength!;
-            profile.LifestyleNotes = createDto.LifestyleNotes!;
-            profile.PreferredWorkoutType = createDto.PreferredWorkoutType!;
             profile.CreatedAt = DateTime.UtcNow;
             profile.UpdatedAt = DateTime.UtcNow;
 
@@ -53,7 +46,7 @@ public class ProfileService(IMapper mapper, FemFitPlusContext context) : IProfil
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException("An error occurred while creating the profile. Please try again.", ex);
+            throw new InvalidOperationException($"An error occurred while creating the profile. Please try again. {ex.Message}");
         }
     }
 

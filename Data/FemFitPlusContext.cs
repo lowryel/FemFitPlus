@@ -34,30 +34,31 @@ public class FemFitPlusContext(DbContextOptions<FemFitPlusContext> options) : Id
         builder.Entity<FemFitUser>()
             .HasOne(u => u.Profile)
             .WithOne(p => p.Femfituser)
-            .HasForeignKey<Profile>(p => p.Id)
+            .HasForeignKey<Profile>(p => p.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
+
         // Configure one-to-one relationship between FemFitUser and Subscription
         builder.Entity<FemFitUser>()
             .HasMany(u => u.Subscriptions)
             .WithOne(s => s.Femfituser)
             .HasForeignKey(s => s.Id)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         // Configure one-to-many relationship between FemFitUser and Consultation
         builder.Entity<FemFitUser>()
             .HasMany(u => u.Consultations)
             .WithOne(c => c.Femfituser)
             .HasForeignKey(c => c.Id)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         // Configure one-to-many relationship between FemFitUser and WorkoutHistory
         builder.Entity<FemFitUser>()
             .HasMany(u => u.WorkoutHistory)
             .WithOne(wh => wh.Femfituser)
             .HasForeignKey(wh => wh.Id)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         // Configure one-to-many relationship between FemFitUser and Cycle
         builder.Entity<FemFitUser>()
             .HasMany(u => u.Cycles)
@@ -70,6 +71,42 @@ public class FemFitPlusContext(DbContextOptions<FemFitPlusContext> options) : Id
             .HasMany(u => u.BodyMetrics)
             .WithOne(bm => bm.Femfituser)
             .HasForeignKey(bm => bm.Id)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Cycle>()
+            .HasOne(u => u.Femfituser)
+            .WithMany(c => c.Cycles)
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // builder.Entity<Profile>()
+        //     .HasOne(u => u.Femfituser)
+        //     .WithOne(c => c.Profile)
+        //     .HasForeignKey<Profile>(c => c.UserId)
+        //     .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Subscription>()
+            .HasOne(u => u.Femfituser)
+            .WithMany(c => c.Subscriptions)
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<WorkoutHistory>()
+            .HasOne(u => u.Femfituser)
+            .WithMany(c => c.WorkoutHistory)
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Consultation>()
+            .HasOne(u => u.Femfituser)
+            .WithMany(c => c.Consultations)
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<BodyMetric>()
+            .HasOne(u => u.Femfituser)
+            .WithMany(c => c.BodyMetrics)
+            .HasForeignKey(c => c.FemFitUserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

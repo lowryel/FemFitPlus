@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using FemFitPlus.Shared;
 
 namespace FemFitPlus.Models;
@@ -25,8 +26,9 @@ public class WorkoutHistory: AuditFields
     public string WorkoutId { get; set; }  = null!; // Foreign key to WorkOut
     public string? UserId { get; set; } // Foreign key to FemFitUser
     public DateTime CompletedAt { get; set; }
-
+    [ForeignKey("WorkoutId")]
     public WorkOut? Workout { get; set; }
+    [ForeignKey("UserId")]
     public FemFitUser? Femfituser { get; set; }
 }
 

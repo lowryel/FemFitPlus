@@ -2,7 +2,9 @@ using System;
 using System.Security.Claims;
 using FemFitPlus.Models.Dtos;
 using FemFitPlus.Services;
+using FemFitPlus.Services.Filters;
 using FemFitPlus.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FemFitPlus.Controllers;
@@ -13,17 +15,86 @@ public class CycleController(ICycleService cycleService) : ControllerBase
 {
     private readonly ICycleService _cycleService = cycleService;
     // Add methods for handling HTTP requests here
-    // [HttpGet]
-    // public IActionResult GetCycleById(int id)
-    // {
-    //     var cycle = _cycleService.GetCycleById(id);
-    //     if (cycle == null)
-    //     {
-    //         return NotFound();
-    //     }
-    //     return Ok(cycle);
-    // }
+    
+    [Authorize]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetCycleById(string id)
+    {
+        var cycle = await _cycleService.GetCycleByIdAsync(id, User.GetUserId());
+        if (cycle == null)
+        {
+            return NotFound();
+        }
+        return Ok(cycle);
+    }
 
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> GetCyclesByUserId()
+    {
+        var userId = User.GetUserId();
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { message = "User ID is required" });
+            }
+
+            var cycles = await _cycleService.GetCyclesByUserIdAsync(userId);
+
+            if (cycles == null || cycles.Count == 0)
+            {
+                return NotFound(new { message = "No cycles found for this user" });
+            }
+
+            return Ok(cycles);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"An error occurred while retrieving cycles: {ex.Message}" });
+        }
+    }
+
+
+    [Authorize]
+    [HttpGet("filter")]
+    public async Task<IActionResult> FilterCycles([FromQuery] CycleFilter filter)
+    {
+        try
+        {
+            var cycles = await _cycleService.Query(filter);
+            if (cycles == null)
+            {
+                return NotFound(new { message = "No cycles found" });
+            }
+            return Ok(cycles);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"An error occurred while retrieving cycles {ex.Message}" });
+        }
+    }
+
+    [Authorize]
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllCycles()
+    {
+        try
+        {
+            var cycles = await _cycleService.GetAllCyclesAsync();
+            return Ok(cycles);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = $"An internal server error occurred" });
+        }
+    }
+
+    [Authorize]
     [HttpPost("create")]
     public async Task<IActionResult> CreateCycle([FromBody] CycleCreateDto cycleDto)
     {
@@ -32,8 +103,8 @@ public class CycleController(ICycleService cycleService) : ControllerBase
             return BadRequest(ModelState);
         }
 
-        // Get authenticated user ID (use ClaimsPrincipal extension method for cleaner code)
         var userId = User.GetUserId();
+        Console.WriteLine($"User ID: {userId}");
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { message = "User not authenticated" });
@@ -43,7 +114,7 @@ public class CycleController(ICycleService cycleService) : ControllerBase
         try
         {
             var result = await _cycleService.CreateCycleAsync(cycleDto);
-            return Ok(result);
+            return StatusCode(201, new { cycle = result });
         }
         catch (ArgumentException ex)
         {
@@ -57,22 +128,43 @@ public class CycleController(ICycleService cycleService) : ControllerBase
         }
     }
 
-    // [HttpPut("{id}")]
-    // public IActionResult UpdateCycle(int id, Cycle cycle)
-    // {
-    //     if (id != cycle.Id)
-    //     {
-    //         return BadRequest();
-    //     }
-    //     _cycleService.UpdateCycle(cycle);
-    //     return NoContent();
-    // }
+    [Authorize]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateCycle(string id, CycleUpdateDto cycle)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest(new { message = "Cycle ID is required" });
+            }
+            await _cycleService.UpdateCycleAsync(id, cycle);
+            return StatusCode(200, new { message = "Cycle updated successfully" });;
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "An error occurred while updating the cycle" });
+        }
+    }
 
-    // [HttpDelete("{id}")]
-    // public IActionResult DeleteCycle(int id)
-    // {
-    //     _cycleService.DeleteCycle(id);
-    //     return NoContent();
-    // }
+    [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCycle(string id)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest(new { message = "Cycle ID is required" });
+            }
+
+            await _cycleService.DeleteCycleAsync(id, User.GetUserId());
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "An error occurred while deleting the cycle" });
+        }
+    }
 }
 

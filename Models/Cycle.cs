@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using FemFitPlus.Data;
 using FemFitPlus.Shared;
 
@@ -18,8 +19,9 @@ public class Cycle: AuditFields
     public DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public CyclePhase? Phase { get; set; }
-    public string? Symptoms { get; set; }
-    public string? Mood { get; set; }
+    public string[]? Symptoms { get; set; }
+    public string[]? Mood { get; set; }
     public int EnergyLevel { get; set; }
+    [ForeignKey("UserId")]
     public FemFitUser? Femfituser { get; set; }
 }

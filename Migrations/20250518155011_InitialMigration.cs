@@ -208,12 +208,36 @@ namespace FemFitPlus.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BodyMetrics",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WeightKg = table.Column<double>(type: "float", nullable: false),
+                    HeightCm = table.Column<double>(type: "float", nullable: true),
+                    RecordedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FemFitUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BodyMetrics", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BodyMetrics_AspNetUsers_FemFitUserId",
+                        column: x => x.FemFitUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Consultations",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CoachId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Startime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     MeetingLink = table.Column<int>(type: "int", nullable: false),
@@ -230,8 +254,8 @@ namespace FemFitPlus.Migrations
                 {
                     table.PrimaryKey("PK_Consultations", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Consultations_AspNetUsers_Id",
-                        column: x => x.Id,
+                        name: "FK_Consultations_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -242,10 +266,10 @@ namespace FemFitPlus.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Phase = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Phase = table.Column<int>(type: "int", nullable: true),
                     Symptoms = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Mood = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EnergyLevel = table.Column<int>(type: "int", nullable: false),
@@ -257,8 +281,8 @@ namespace FemFitPlus.Migrations
                 {
                     table.PrimaryKey("PK_Cycles", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Cycles_AspNetUsers_Id",
-                        column: x => x.Id,
+                        name: "FK_Cycles_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -269,7 +293,10 @@ namespace FemFitPlus.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProfileImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    HeightCm = table.Column<double>(type: "float", nullable: true),
+                    WeightKg = table.Column<double>(type: "float", nullable: true),
                     FitnessGoal = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CycleLength = table.Column<int>(type: "int", nullable: false),
                     PeriodLength = table.Column<int>(type: "int", nullable: false),
@@ -283,8 +310,8 @@ namespace FemFitPlus.Migrations
                 {
                     table.PrimaryKey("PK_Profiles", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Profiles_AspNetUsers_Id",
-                        column: x => x.Id,
+                        name: "FK_Profiles_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -295,7 +322,7 @@ namespace FemFitPlus.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     StripeCustomerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PlanName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -309,8 +336,8 @@ namespace FemFitPlus.Migrations
                 {
                     table.PrimaryKey("PK_Subscriptions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Subscriptions_AspNetUsers_Id",
-                        column: x => x.Id,
+                        name: "FK_Subscriptions_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -322,7 +349,7 @@ namespace FemFitPlus.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     WorkoutId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -332,8 +359,8 @@ namespace FemFitPlus.Migrations
                 {
                     table.PrimaryKey("PK_WorkoutHistories", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_WorkoutHistories_AspNetUsers_Id",
-                        column: x => x.Id,
+                        name: "FK_WorkoutHistories_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -385,6 +412,37 @@ namespace FemFitPlus.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_BodyMetrics_FemFitUserId",
+                table: "BodyMetrics",
+                column: "FemFitUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consultations_UserId",
+                table: "Consultations",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Cycles_UserId",
+                table: "Cycles",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Profiles_UserId",
+                table: "Profiles",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Subscriptions_UserId",
+                table: "Subscriptions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkoutHistories_UserId",
+                table: "WorkoutHistories",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkoutHistories_WorkoutId",
                 table: "WorkoutHistories",
                 column: "WorkoutId");
@@ -407,6 +465,9 @@ namespace FemFitPlus.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "BodyMetrics");
 
             migrationBuilder.DropTable(
                 name: "Consultations");

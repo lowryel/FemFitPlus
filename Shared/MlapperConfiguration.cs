@@ -18,7 +18,9 @@ public class MlapperConfiguration
                 config.CreateMap<ConsultationDto, Consultation>();
                 config.CreateMap<FemFitUserDto, FemFitUser>();
                 config.CreateMap<CycleDto, Cycle>();
+                config.CreateMap<Cycle, CycleDto>();
                 config.CreateMap<CycleCreateDto, Cycle>();
+                config.CreateMap<Cycle, CycleCreateDto>();
                 config.CreateMap<CycleUpdateDto, Cycle>();
                 config.CreateMap<ProfileCreateDto, Profile>();
                 config.CreateMap<ProfileDto, Profile>();

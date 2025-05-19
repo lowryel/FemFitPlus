@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using FemFitPlus.Shared;
 
 namespace FemFitPlus.Models;
@@ -16,5 +17,6 @@ public class Profile: AuditFields
     public string? PreferredWorkoutType { get; set; }
 
     // Navigation property
+    [ForeignKey("UserId")]
     public FemFitUser? Femfituser { get; set; }
 }
