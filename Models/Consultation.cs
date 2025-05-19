@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using FemFitPlus.Shared;
 
 namespace FemFitPlus.Models;
@@ -7,6 +8,7 @@ public class Consultation: AuditFields
 {
     public Guid CoachId { get; set; }
     public string UserId { get; set; } = null!;
+    [ForeignKey("UserId")]
     public FemFitUser? Femfituser { get; set; }
     public DateTime Startime { get; set; }
     public DateTime EndTime { get; set; }

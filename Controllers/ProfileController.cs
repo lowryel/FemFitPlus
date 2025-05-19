@@ -18,7 +18,7 @@ public class ProfileController(IMapper mapper, IProfileService profileService) :
     // private readonly IJwtTokenService _jwtTokenService;
     private readonly IProfileService _profileService = profileService;
 
-    // [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [HttpGet()]
     public async Task<IActionResult> Query(ProfileFilter filter)
     {
@@ -31,54 +31,56 @@ public class ProfileController(IMapper mapper, IProfileService profileService) :
         var profile = await _profileService.Query(filter);
         return Ok(profile);
     }
-
+    
+    [Authorize]
     [HttpPost("create")]
     public async Task<IActionResult> Create(ProfileCreateDto createDto)
     {
         try
         {
-            _mapper.Map<ProfileCreateDto, Profile>(createDto);
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
             {
                 return Unauthorized();
             }
-            // createDto.UserId = userId;
+            createDto.UserId = userId;
             var profile = await _profileService.Create(createDto);
             return Ok(profile);
         }
-        catch (Exception)
-        { 
-            throw new InvalidOperationException("An error occurred while creating the profile. Please try again.");
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"An error occurred while creating the profile. Please try again.{ex.Message}");
         }
     }
 
+    [Authorize]
     [HttpGet("info")]
     public async Task<IActionResult> Info(string id)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId == null)
         {
-            return Unauthorized();
+            return StatusCode(403, "User not authenticated"); //Unauthorized();
         }
         var profile = await _profileService.Info(id);
         return Ok(profile);
     }
 
+    [Authorize]
     [HttpPut("update")]
-    public async Task<IActionResult> Update(string id, [FromBody]ProfileCreateDto createDto)
+    public async Task<IActionResult> Update(string id, [FromBody] ProfileCreateDto createDto)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        System.Console.WriteLine($"UserId: {userId} Id: {id}");
         if (userId == null)
         {
             return Unauthorized();
         }
         createDto.UserId = userId;
-        var profile = await _profileService.Update(userId, createDto);
+        var profile = await _profileService.Update(id, createDto);
         return Ok(profile);
     }
 
+    [Authorize]
     [HttpDelete("delete")]
     public async Task<IActionResult> Delete(string id)
     {

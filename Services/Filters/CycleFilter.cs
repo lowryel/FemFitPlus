@@ -11,7 +11,7 @@ public class CycleFilter
     [FromQuery]
     public string? Mood { get; set; }
     [FromQuery]
-    public string? Phase { get; set; }
+    public CyclePhase? Phase { get; set; }
     [FromQuery]
     public DateTime? StartDate { get; set; }
     [FromQuery]
@@ -53,8 +53,8 @@ public class CycleFilter
         if (!string.IsNullOrEmpty(Mood))
             query = query.Where(q => q.Mood!.Contains(Mood));
 
-        if (!string.IsNullOrEmpty(Phase))
-            query = query.Where(q => q.Mood!.Contains(Phase));
+        if (Phase.HasValue)
+            query = query.Where(q => q.Phase!.Value == Phase.Value);
 
         // if (Phase.HasValue)
         //     query = query.Where(q => q.Femfituser!.IsActive == IsActive.Value);

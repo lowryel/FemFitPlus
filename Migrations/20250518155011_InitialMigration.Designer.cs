@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FemFitPlus.Migrations
 {
     [DbContext(typeof(FemFitPlusContext))]
-    [Migration("20250510072429_UpdatedUserTable")]
-    partial class UpdatedUserTable
+    [Migration("20250518155011_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -102,9 +102,11 @@ namespace FemFitPlus.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Consultations");
                 });
@@ -129,8 +131,8 @@ namespace FemFitPlus.Migrations
                     b.Property<string>("Mood")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Phase")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("Phase")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
@@ -143,9 +145,11 @@ namespace FemFitPlus.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Cycles");
                 });
@@ -307,12 +311,15 @@ namespace FemFitPlus.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<double?>("WeightKg")
                         .HasColumnType("float");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("Profiles");
                 });
@@ -348,9 +355,11 @@ namespace FemFitPlus.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Subscriptions");
                 });
@@ -429,13 +438,15 @@ namespace FemFitPlus.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("WorkoutId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("WorkoutId");
 
@@ -577,20 +588,20 @@ namespace FemFitPlus.Migrations
 
             modelBuilder.Entity("FemFitPlus.Models.BodyMetric", b =>
                 {
-                    b.HasOne("FemFitPlus.Models.FemFitUser", "FemFitUser")
+                    b.HasOne("FemFitPlus.Models.FemFitUser", "Femfituser")
                         .WithMany("BodyMetrics")
                         .HasForeignKey("FemFitUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("FemFitUser");
+                    b.Navigation("Femfituser");
                 });
 
             modelBuilder.Entity("FemFitPlus.Models.Consultation", b =>
                 {
                     b.HasOne("FemFitPlus.Models.FemFitUser", "Femfituser")
                         .WithMany("Consultations")
-                        .HasForeignKey("Id")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -601,7 +612,7 @@ namespace FemFitPlus.Migrations
                 {
                     b.HasOne("FemFitPlus.Models.FemFitUser", "Femfituser")
                         .WithMany("Cycles")
-                        .HasForeignKey("Id")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -612,7 +623,7 @@ namespace FemFitPlus.Migrations
                 {
                     b.HasOne("FemFitPlus.Models.FemFitUser", "Femfituser")
                         .WithOne("Profile")
-                        .HasForeignKey("FemFitPlus.Models.Profile", "Id")
+                        .HasForeignKey("FemFitPlus.Models.Profile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -623,7 +634,7 @@ namespace FemFitPlus.Migrations
                 {
                     b.HasOne("FemFitPlus.Models.FemFitUser", "Femfituser")
                         .WithMany("Subscriptions")
-                        .HasForeignKey("Id")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -634,9 +645,8 @@ namespace FemFitPlus.Migrations
                 {
                     b.HasOne("FemFitPlus.Models.FemFitUser", "Femfituser")
                         .WithMany("WorkoutHistory")
-                        .HasForeignKey("Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("FemFitPlus.Models.WorkOut", "Workout")
                         .WithMany()
