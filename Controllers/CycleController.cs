@@ -49,9 +49,9 @@ public class CycleController(ICycleService cycleService) : ControllerBase
 
             return Ok(cycles);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return StatusCode(500, new { message = $"An error occurred while retrieving cycles: {ex.Message}" });
+            return StatusCode(500, new { message = $"An error occurred while retrieving cycles" });
         }
     }
 
@@ -62,7 +62,7 @@ public class CycleController(ICycleService cycleService) : ControllerBase
     {
         try
         {
-            var cycles = await _cycleService.Query(filter);
+            List<CycleDto> cycles = await _cycleService.Query(filter);
             if (cycles == null)
             {
                 return NotFound(new { message = "No cycles found" });
@@ -71,6 +71,8 @@ public class CycleController(ICycleService cycleService) : ControllerBase
         }
         catch (Exception ex)
         {
+            // Log the exception (replace with your logging framework if needed)
+            Console.Error.WriteLine($"Exception in FilterCycles: {ex}");
             return StatusCode(500, new { message = $"An error occurred while retrieving cycles {ex.Message}" });
         }
     }
@@ -104,7 +106,6 @@ public class CycleController(ICycleService cycleService) : ControllerBase
         }
 
         var userId = User.GetUserId();
-        Console.WriteLine($"User ID: {userId}");
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { message = "User not authenticated" });
@@ -121,10 +122,10 @@ public class CycleController(ICycleService cycleService) : ControllerBase
             // Client error - return as 400
             return BadRequest(new { message = ex.Message });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Log the exception with appropriate logging framework
-            return StatusCode(500, new { message = $"An error occurred while processing your request {ex}" });
+            return StatusCode(500, new { message = $"An error occurred while processing your request" });
         }
     }
 
@@ -139,7 +140,7 @@ public class CycleController(ICycleService cycleService) : ControllerBase
                 return BadRequest(new { message = "Cycle ID is required" });
             }
             await _cycleService.UpdateCycleAsync(id, cycle);
-            return StatusCode(200, new { message = "Cycle updated successfully" });;
+            return StatusCode(200, new { message = "Cycle updated successfully" });
         }
         catch (Exception)
         {

@@ -13,9 +13,7 @@ namespace FemFitPlus.Controllers;
 [ApiController]
 public class ProfileController(IMapper mapper, IProfileService profileService) : ControllerBase
 {
-    // private readonly IUserAuthService _service;
     private readonly IMapper _mapper = mapper;
-    // private readonly IJwtTokenService _jwtTokenService;
     private readonly IProfileService _profileService = profileService;
 
     [Authorize(Roles = "Admin")]
@@ -28,8 +26,17 @@ public class ProfileController(IMapper mapper, IProfileService profileService) :
             return Unauthorized();
         }
         // filter.UserId = userId;
-        var profile = await _profileService.Query(filter);
-        return Ok(profile);
+        try
+        {
+            // Optionally validate filter properties here to prevent injection via filter fields
+            List<ProfileDto> profile = await _profileService.Query(filter);
+            return Ok(profile);
+        }
+        catch (Exception ex)
+        {
+            // Log the exception as needed
+            return StatusCode(500, $"An error occurred while querying profiles. Please try again. {ex.Message}");
+        }
     }
     
     [Authorize]
@@ -47,9 +54,9 @@ public class ProfileController(IMapper mapper, IProfileService profileService) :
             var profile = await _profileService.Create(createDto);
             return Ok(profile);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return StatusCode(500, $"An error occurred while creating the profile. Please try again.{ex.Message}");
+            return StatusCode(500, $"An error occurred while creating the profile. Please try again");
         }
     }
 
@@ -60,10 +67,21 @@ public class ProfileController(IMapper mapper, IProfileService profileService) :
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId == null)
         {
-            return StatusCode(403, "User not authenticated"); //Unauthorized();
+            return StatusCode(403, "User not authenticated");
         }
-        var profile = await _profileService.Info(id);
-        return Ok(profile);
+        if (id == null )
+        {
+            return BadRequest("Profile ID cannot be null");
+        }
+        try
+        {
+            ProfileDto profile = await _profileService.Info(id);
+            return Ok(profile);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while retrieving profile information.");
+        }
     }
 
     [Authorize]
@@ -89,8 +107,15 @@ public class ProfileController(IMapper mapper, IProfileService profileService) :
         {
             return Unauthorized();
         }
-        var profile = await _profileService.Delete(id);
-        return Ok(profile);
+        try
+        {
+            var profile = await _profileService.Delete(id);
+            return Ok(profile);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"An error occurred while deleting the profile. Please try again. {ex.Message}");
+        }
     }
 }
 
