@@ -130,7 +130,6 @@ public class UserAuthService(UserManager<FemFitUser> userManager,
         {
             throw new Exception("An error occurred while retrieving the profile", ex);
         }
-        throw new NotImplementedException();
     }
 
     public async Task<FemFitUserDto> LoginAsync(LoginDto loginDto)

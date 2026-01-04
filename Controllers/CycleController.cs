@@ -139,11 +139,12 @@ public class CycleController(ICycleService cycleService) : ControllerBase
                 return BadRequest(new { message = "Cycle ID is required" });
             }
             await _cycleService.UpdateCycleAsync(id, cycle);
-            return StatusCode(200, new { message = "Cycle updated successfully" });;
+            Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            return StatusCode(200, new { message = "Cycle updated successfully" }); ;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while updating the cycle" });
+            return StatusCode(500, new { message = $"An error occurred while updating the cycle: {ex.Message}" });
         }
     }
 

@@ -6,15 +6,23 @@ using FemFitPlus.Services.Filters;
 using FemFitPlus.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Mlapper.Auto.Mapper;
 
 namespace FemFitPlus.Services;
 
-public class CycleService(FemFitPlusContext context, IMapper mapper) : ICycleService
+public class CycleService(FemFitPlusContext context, IMapper mapper, IMemoryCache cache) : ICycleService
 {
     private readonly FemFitPlusContext _context = context;
     private readonly IMapper _mapper = mapper;
+    private readonly IMemoryCache _cache = cache;
+
+    // Cache configuration
+    private const string CACHE_KEY_ALL_PRODUCTS = "all_products";
+    private const string CACHE_KEY_PRODUCT_PREFIX = "product_";
+    private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
+    private readonly TimeSpan _shortCacheExpiration = TimeSpan.FromMinutes(5);
 
 
     public async Task<CycleCreateDto> CreateCycleAsync(CycleCreateDto cycleCreateDto)
@@ -100,6 +108,14 @@ public class CycleService(FemFitPlusContext context, IMapper mapper) : ICycleSer
         if (cycle.UserId != userId)
             throw new UnauthorizedAccessException("You do not have permission to delete this cycle");
 
+        if (cycle == null)
+        {
+            // Invalidate both individual product cache and all products cache
+            var individualCacheKey = $"{CACHE_KEY_PRODUCT_PREFIX}{cycle!.Id}";
+            _cache.Remove(individualCacheKey);
+            await InvalidateAllProductsCacheAsync();
+        }
+
         _context.Cycles.Remove(cycle);
         await _context.SaveChangesAsync();
         return true;
@@ -107,10 +123,23 @@ public class CycleService(FemFitPlusContext context, IMapper mapper) : ICycleSer
 
     public async Task<List<CycleDto>> Query(CycleFilter filter)
     {
+        if (_cache.TryGetValue(CACHE_KEY_ALL_PRODUCTS, out List<CycleDto>? cachedProducts))
+        {
+            return cachedProducts!;
+        }
         var query = filter.BuildQuery(_context.Cycles.AsQueryable());
 
         query = query.Skip(filter?.Skip() ?? 0).Take(filter?.Size ?? 10);
         var cycles = await query.ToListAsync();
+
+        var cacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = _cacheExpiration,
+            SlidingExpiration = _shortCacheExpiration,
+            Priority = CacheItemPriority.Normal
+        };
+
+        _cache.Set(CACHE_KEY_ALL_PRODUCTS, cycles, cacheOptions);
 
         return [.. cycles.Select(c => new CycleDto
         {
@@ -127,10 +156,25 @@ public class CycleService(FemFitPlusContext context, IMapper mapper) : ICycleSer
 
     public async Task<List<CycleDto>> GetCyclesByUserIdAsync(string userId)
     {
+        if (_cache.TryGetValue(CACHE_KEY_ALL_PRODUCTS, out List<CycleDto>? cachedProducts))
+        {
+            return cachedProducts!;
+        }
+
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentNullException(nameof(userId));
 
         var cycles = await _context.Cycles.Where(c => c.UserId == userId).ToListAsync();
+
+        var cacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = _cacheExpiration,
+            SlidingExpiration = _shortCacheExpiration,
+            Priority = CacheItemPriority.Normal
+        };
+
+        _cache.Set(CACHE_KEY_ALL_PRODUCTS, cycles, cacheOptions);
+
         return [.. cycles.Select(c => new CycleDto
         {
             Id = c.Id,
@@ -146,6 +190,11 @@ public class CycleService(FemFitPlusContext context, IMapper mapper) : ICycleSer
 
     public async Task<CycleDto> GetCycleByIdAsync(string cycleId, string userId)
     {
+        if (_cache.TryGetValue(CACHE_KEY_ALL_PRODUCTS, out CycleDto? cachedProducts))
+        {
+            return cachedProducts!;
+        }
+
         if (string.IsNullOrEmpty(cycleId))
             throw new ArgumentException("Cycle ID is required", nameof(cycleId));
 
@@ -155,6 +204,15 @@ public class CycleService(FemFitPlusContext context, IMapper mapper) : ICycleSer
         var cycle = await _context.Cycles.FindAsync(cycleId) ?? throw new KeyNotFoundException("Cycle not found");
         if (cycle.UserId != userId)
             throw new UnauthorizedAccessException("You do not have permission to access this cycle");
+
+        var cacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = _cacheExpiration,
+            SlidingExpiration = _shortCacheExpiration,
+            Priority = CacheItemPriority.Normal
+        };
+
+        _cache.Set(CACHE_KEY_ALL_PRODUCTS, cycle, cacheOptions);
 
         return _mapper.Map<Cycle, CycleDto>(cycle);
     }
@@ -200,16 +258,31 @@ public class CycleService(FemFitPlusContext context, IMapper mapper) : ICycleSer
 
             return _mapper.Map<Cycle, CycleDto>(cycle);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            throw new ApplicationException("An error occurred while updating the cycle");
+            throw new ApplicationException($"An error occurred while updating the cycle: {ex.Message}");
         }
 
     }
 
     public async Task<List<CycleDto>> GetAllCyclesAsync()
     {
+        if (_cache.TryGetValue(CACHE_KEY_ALL_PRODUCTS, out List<CycleDto>? cachedProducts))
+        {
+            return cachedProducts!;
+        }
+
         var cycles = await _context.Cycles.ToListAsync();
+
+        var cacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = _cacheExpiration,
+            SlidingExpiration = _shortCacheExpiration,
+            Priority = CacheItemPriority.Normal
+        };
+
+        _cache.Set(CACHE_KEY_ALL_PRODUCTS, cycles, cacheOptions);
+
         return [.. cycles.Select(c => new CycleDto
         {
             Id = c.Id,
@@ -221,5 +294,11 @@ public class CycleService(FemFitPlusContext context, IMapper mapper) : ICycleSer
             StartDate = c.StartDate,
             EndDate = c.EndDate
         })];
+    }
+
+    public async Task InvalidateAllProductsCacheAsync()
+    {
+        _cache.Remove(CACHE_KEY_ALL_PRODUCTS);
+        await Task.CompletedTask;
     }
 }

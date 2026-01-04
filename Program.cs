@@ -9,11 +9,12 @@ using System.Text;
 using static FemFitPlus.Shared.MlapperConfiguration;
 using FemFitPlus.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add database context first
-builder.Services.AddDbContext<FemFitPlusContext>(options =>
+builder.Services.AddDbContextPool<FemFitPlusContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
@@ -111,6 +112,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddTransient<IUserAuthService, UserAuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
