@@ -4,6 +4,7 @@ using FemFitPlus.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FemFitPlus.Migrations
 {
     [DbContext(typeof(FemFitPlusContext))]
-    partial class FemFitPlusContextModelSnapshot : ModelSnapshot
+    [Migration("20260104151245_BodyMetricsSetup")]
+    partial class BodyMetricsSetup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

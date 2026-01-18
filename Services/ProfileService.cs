@@ -1,20 +1,25 @@
 using System;
 using System.Linq;
+using System.Text.Json;
 using FemFitPlus.Data;
 using FemFitPlus.Models;
 using FemFitPlus.Models.Dtos;
 using FemFitPlus.Services.Filters;
+using FemFitPlus.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Caching.Distributed;
 using Mlapper.Auto.Mapper;
 
 namespace FemFitPlus.Services;
 
-public class ProfileService(IMapper mapper, FemFitPlusContext context) : IProfileService
+public class ProfileService(IMapper mapper, FemFitPlusContext context, IDistributedCache cache) : IProfileService
 {
     private readonly FemFitPlusContext _context = context;
 
     private readonly IMapper _mapper = mapper;
+
+    private readonly IDistributedCache _cache = cache;
 
     public async Task<ProfileCreateDto> Create(ProfileCreateDto createDto)
     {
@@ -94,21 +99,32 @@ public class ProfileService(IMapper mapper, FemFitPlusContext context) : IProfil
 
     public async Task<List<ProfileDto>> Query(ProfileFilter filter)
     {
+        var cacheKey = Helpers.BuildCacheKey(filter);
+
+        // 1️⃣ Try cache first
+        var cached = await _cache.GetStringAsync(cacheKey);
+        if (cached != null)
+        {
+            return JsonSerializer.Deserialize<List<ProfileDto>>(cached)!;
+        }
+
+        // 2️⃣ Build query
         var query = _context.Profiles
             .Where(p => p.Id != null)
             .Include(p => p.Femfituser)
             .AsQueryable();
 
-        // Apply filter conditions
         if (filter != null)
         {
             query = filter.BuildQuery(query);
         }
 
-        // Apply pagination after filtering
-        query = query.Skip(filter?.Skip() ?? 0).Take(filter?.Size ?? 10);
+        query = query
+            .Skip(filter?.Skip() ?? 0)
+            .Take(filter?.Size ?? 10);
 
         var profiles = await query
+            .AsNoTracking()
             .Select(p => new ProfileDto(
                 p.Id,
                 p.UserId,
@@ -120,10 +136,22 @@ public class ProfileService(IMapper mapper, FemFitPlusContext context) : IProfil
                 p.LifestyleNotes,
                 p.PreferredWorkoutType
             ))
-        .ToListAsync();
+            .ToListAsync();
+
+        // 3️⃣ Store in cache
+        var options = new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(3)
+        };
+
+        await _cache.SetStringAsync(
+            cacheKey,
+            JsonSerializer.Serialize(profiles),
+            options);
 
         return profiles;
     }
+
 
     public Task<bool> Update(string id, ProfileCreateDto createDto)
     {

@@ -15,24 +15,18 @@ public class MlapperConfiguration
         {
             var config = new MapperConfiguration();
                 // Add your mappings here
-                config.CreateMap<ConsultationDto, Consultation>();
+                config.CreateMap<ConsultationDto, Consultation>().ReverseMap();
                 config.CreateMap<FemFitUserDto, FemFitUser>();
                 config.CreateMap<CycleDto, Cycle>().ReverseMap();
-                // config.CreateMap<Cycle, CycleDto>();
                 config.CreateMap<CycleCreateDto, Cycle>().ReverseMap();
-                // config.CreateMap<Cycle, CycleCreateDto>();
                 config.CreateMap<CycleUpdateDto, Cycle>().ReverseMap();
-                // config.ReverseMap<CycleUpdateDto, Cycle>();
-                // config.CreateMap<Cycle, CycleUpdateDto>();
                 config.CreateMap<ProfileCreateDto, Profile>().ReverseMap();
-                config.CreateMap<ProfileDto, Profile>();
-                // config.CreateMap<Profile, ProfileCreateDto>();
-                config.CreateMap<SubscriptionDto, Subscription>();
-                config.CreateMap<MealPlanDto, MealPlan>();
-                config.CreateMap<WorkoutHistoryDto, WorkoutHistory>();
-                config.CreateMap<WorkOutDto, WorkOut>();
-                // config.ReverseMap<WorkOut, WorkOutDto>(); // Ignore Id mapping for reverse maps
-                // Add more mappings as needed
+                config.CreateMap<ProfileDto, Profile>().ReverseMap();
+                config.CreateMap<SubscriptionDto, Subscription>().ReverseMap();
+                config.CreateMap<MealPlanDto, MealPlan>().ReverseMap();
+                config.CreateMap<WorkoutHistoryDto, WorkoutHistory>().ReverseMap();
+                config.CreateMap<WorkOutDto, WorkOut>().ReverseMap();
+                config.CreateMap<BodyMetricDto, BodyMetric>().ReverseMap();
 
             return config.CreateMapper();
         }

@@ -48,7 +48,7 @@ public class FemFitPlusContext(DbContextOptions<FemFitPlusContext> options) : Id
         // Configure one-to-many relationship between FemFitUser and Consultation
         builder.Entity<FemFitUser>()
             .HasMany(u => u.Consultations)
-            .WithOne(c => c.Femfituser)
+            .WithOne(c => c.Coach)
             .HasForeignKey(c => c.Id)
             .OnDelete(DeleteBehavior.Cascade);
 
@@ -69,7 +69,7 @@ public class FemFitPlusContext(DbContextOptions<FemFitPlusContext> options) : Id
         // Configure one-to-many relationship between FemFitUser and BodyMetric
         builder.Entity<FemFitUser>()
             .HasMany(u => u.BodyMetrics)
-            .WithOne(bm => bm.Femfituser)
+            .WithOne(bm => bm.FemFitUser)
             .HasForeignKey(bm => bm.Id)
             .OnDelete(DeleteBehavior.Cascade);
 
@@ -98,13 +98,13 @@ public class FemFitPlusContext(DbContextOptions<FemFitPlusContext> options) : Id
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<Consultation>()
-            .HasOne(u => u.Femfituser)
+            .HasOne(u => u.Coach)
             .WithMany(c => c.Consultations)
-            .HasForeignKey(c => c.UserId)
+            .HasForeignKey(c => c.CoachId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<BodyMetric>()
-            .HasOne(u => u.Femfituser)
+            .HasOne(u => u.FemFitUser)
             .WithMany(c => c.BodyMetrics)
             .HasForeignKey(c => c.FemFitUserId)
             .OnDelete(DeleteBehavior.Cascade);

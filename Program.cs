@@ -9,42 +9,45 @@ using System.Text;
 using static FemFitPlus.Shared.MlapperConfiguration;
 using FemFitPlus.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add database context first
+// 1️⃣ Add services
+
+// Database
 builder.Services.AddDbContextPool<FemFitPlusContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-// Add Identity after DbContext
+// Redis
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+    options.InstanceName = "FemFit:";
+});
+
+// Identity
 builder.Services.AddIdentity<FemFitUser, IdentityRole>(options =>
 {
-    // Password settings
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
     options.Password.RequiredLength = 8;
 
-    // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.MaxFailedAccessAttempts = 5;
 
-    // User settings
     options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<FemFitPlusContext>()
 .AddDefaultTokenProviders();
 
-// Add JWT Authentication
+// JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))
-{
     throw new InvalidOperationException("JWT Key is not configured in appsettings.json");
-}
 
 builder.Services.AddAuthentication(options =>
 {
@@ -61,11 +64,10 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-        ClockSkew = TimeSpan.Zero // Optional: reduces the default 5 min clock skew
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!)),
+        ClockSkew = TimeSpan.Zero
     };
 
-    // Optional: Enable this for better debugging
     options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
@@ -79,7 +81,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Configure cookie policy
+// Cookie settings
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
@@ -89,54 +91,54 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// Add CORS - Note: you have two CORS configurations, I'm keeping the more specific one
+// CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin", policy =>
-    {
-        policy.WithOrigins("http://example.com", "http://www.contoso.com")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-
-    // Add a default policy for development if needed
     options.AddPolicy("Development", policy =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+
+    options.AddPolicy("Production", policy =>
+    {
+        policy.WithOrigins("https://your-production-domain.com")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
-// Add other services
+// Controllers, Swagger, MemoryCache
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 
+// AutoMapper
+builder.Services.AddSingleton(MapperConfig.InitializeAutoMapper());
+
+// App services
 builder.Services.AddTransient<IUserAuthService, UserAuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ICycleService, CycleService>();
-// Add email service
-// builder.Services.AddTransient<IEmailSender>();
+builder.Services.AddScoped<IBodyMetricService, BodyMetricService>();
 
-// Add mapper
-builder.Services.AddSingleton(MapperConfig.InitializeAutoMapper());
-
-// Build the app
+// 2️⃣ Build the app
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// 3️⃣ Middleware pipeline
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    // Use development CORS policy
+    // Apply development CORS
     app.UseCors("Development");
 
-    // Apply migrations automatically in development
+    // Auto apply migrations + seed roles
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
@@ -149,11 +151,6 @@ if (app.Environment.IsDevelopment())
             logger.LogInformation("Database migration completed successfully");
 
             await RoleSeeder.SeedRolesAsync(services);
-
-            // Optional: Seed initial roles
-            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = services.GetRequiredService<UserManager<FemFitUser>>();
-            // SeedInitialData(roleManager, userManager).Wait();
         }
         catch (Exception ex)
         {
@@ -164,32 +161,35 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // Use the specific origins CORS policy in production
-    app.UseCors("AllowSpecificOrigin");
+    // Production CORS
+    app.UseCors("Production");
 
-    // Add production-specific middleware
-    // app.UseHsts();
+    // Optional: app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Optional HTTPS redirection
+// app.UseHttpsRedirection();
 
 app.UseRouting();
 
-// Authentication must come before Authorization
+// Must come AFTER routing and CORS
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Map controllers last
 app.MapControllers();
 
+// 4️⃣ Run
 app.Run();
 
+// 5️⃣ Role Seeder
 public class RoleSeeder
 {
     public static async Task SeedRolesAsync(IServiceProvider serviceProvider)
     {
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-        string[] roles = [ "USER", "ADMIN" ]; // add all roles you need
+        string[] roles = new[] { "USER", "ADMIN" };
 
         foreach (var role in roles)
         {
